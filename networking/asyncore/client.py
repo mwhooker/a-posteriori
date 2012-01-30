@@ -1,46 +1,49 @@
-import asyncore, socket
+import asyncore, asynchat, socket
 import json
 import sys
 
 
-class ChatClient(asyncore.dispatcher):
+class ChatClient(asynchat.async_chat):
 
     def __init__(self, host, port, username="Matt"):
-        asyncore.dispatcher.__init__(self)
+        asynchat.async_chat.__init__(self)
         self.username = username
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect( (host, port) )
-        self.buf = ""
+        self.ibuffer = []
+        self.set_terminator("\r\n\r\n")
+
+    def collect_incoming_data(self, data):
+        """Buffer the data"""
+        self.ibuffer.append(data)
 
     def handle_connect(self):
         print "Now chatting"
-        self.send(json.dumps({
-            "type": "connect",
-            "username": self.username
-        }))
+        self._send_data("connect", username=self.username)
 
     def handle_close(self):
         print "goodbye"
         self.close()
         sys.exit(0)
 
-    def handle_read(self):
-        msg = json.loads(self.recv(8192))
-        print "[%s] %s" % (msg['from'], msg['body'])
+    def found_terminator(self):
+        if self.ibuffer:
+            msg = ''.join(self.ibuffer)
+            msg = json.loads(msg)
+            self.ibuffer = []
+            print "[%s] %s" % (msg['from'], msg['body'])
 
-    def handle_write(self):
-        sent = self.send(self.buf)
-        self.buf = self.buf[sent:]
+    def _send_data(self, type_, **kwargs):
+        d = {}
+        d.update(kwargs)
+        d['type'] = type_
+        msg = json.dumps(d)
+        msg += self.get_terminator()
+        self.push(msg)
 
     def send_msg(self, msg):
-        if len(self.buf):
-            print "Can't sennd right now!"
-            return
+        self._send_data("msg", body=msg)
 
-        self.buf = json.dumps({
-            "type": "msg",
-            "body": msg
-        })
 
 class Input(asyncore.file_dispatcher):
 
@@ -55,4 +58,4 @@ class Input(asyncore.file_dispatcher):
 client = ChatClient('localhost', 51234, sys.argv[1])
 inp_dispatcher = Input(client)
 
-asyncore.loop()
+asyncore.loop(use_poll=True)

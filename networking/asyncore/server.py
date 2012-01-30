@@ -1,7 +1,7 @@
 import asyncore
+import asynchat
 import json
 import socket
-
 
 
 class Clients(object):
@@ -12,30 +12,39 @@ class Clients(object):
     def add_client(self, username, client):
         self.clients[username] = client
 
-class ChatHandler(asyncore.dispatcher_with_send):
+class ChatHandler(asynchat.async_chat):
 
     def __init__(self, socket, server):
-        asyncore.dispatcher_with_send.__init__(self, socket)
+        asynchat.async_chat.__init__(self, socket)
         self.server = server
-        self.outgoing = []
+        self.ibuffer = []
+        self.set_terminator("\r\n\r\n")
 
-    def handle_read(self):
-        data = self.recv(8192)
-        if data:
-            msg = json.loads(data)
-            print "got ", data
+    def collect_incoming_data(self, data):
+        """Buffer the data"""
+        self.ibuffer.append(data)
+
+    def found_terminator(self):
+        if self.ibuffer:
+            msg = ''.join(self.ibuffer)
+            msg = json.loads(msg)
+            print "got ", self.ibuffer
             if msg["type"] == "connect":
                 self.username = msg["username"]
                 self.server.register(self)
             elif msg["type"] == "msg":
                 self.server.message(self, msg["body"])
+            else:
+                print "unknown type: ", msg
+            self.ibuffer = []
     
     def send_message(self, from_, message):
         msg = json.dumps({
             "from": from_,
             "body": message
         })
-        self.send(msg)
+        msg += self.get_terminator()
+        self.push(msg)
 
 
 class ChatServer(asyncore.dispatcher):
@@ -72,4 +81,4 @@ class ChatServer(asyncore.dispatcher):
 
 
 server = ChatServer('localhost', 51234)
-asyncore.loop()
+asyncore.loop(use_poll=True)
