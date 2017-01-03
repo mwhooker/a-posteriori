@@ -1,4 +1,5 @@
-/*
+/* vi: ft=prolog
+*
 There are five houses.
 The Englishman lives in the red house.
 The Spaniard owns the dog.
@@ -32,13 +33,13 @@ smokes(smoke(kools), house(yellow)).
 smokes(smoke(luckystrike), drink(oj)).
 smokes(smoke(parliaments), person(japanese)).
 
-%    #The man who smokes Chesterfields lives in the house next to the man with the fox.
-%    #Kools are smoked in the house next to the house where the horse is kept.
-%    #The Norwegian lives next to the blue house.
+%# The man who smokes Chesterfields lives in the house next to the man with the fox.
+%# Kools are smoked in the house next to the house where the horse is kept.
+%# The Norwegian lives next to the blue house.
 adj(smoke(chesterfields), pet(fox)).
 adj(smoke(kools), pet(horse)).
 adj(person(norwegian), house(blue)).
-%    #The green house is immediately to the right of the ivory house.
+%# The green house is immediately to the right of the ivory house.
 left(house(ivory), house(green)).
 
 
