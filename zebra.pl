@@ -100,3 +100,48 @@ smoke(parliaments).
 %    #Now, who drinks water? Who owns the zebra?
 %drinks(drink(water), Person).
 %owns(pet(zebra), Person).
+row(1, H, P, S, D, N).
+row(3, H, P, S, D, N).
+row(4, H, P, S, D, N).
+row(I, ivory, P, S, D, N).
+row(I, blue, P, S, D, N).
+row(I, H, zebra, S, D, N).
+row(I, H, fox, S, D, N).
+row(I, H, horse, S, D, N).
+row(I, H, P, chesterfields, D, N).
+row(I, H, P, S, water, N).
+
+row(I, H, dog, S, D, spaniard).
+row(I, red, P, S, D, englishman).
+row(0, H, P, S, D, norwegian).
+row(I, green, P, S, coffee, N).
+row(I, H, P, S, tea, ukranian).
+row(2, H, P, S, milk, N).
+row(I, H, snail, og, D, N).
+row(I, yellow, P, kools, D, N).
+row(I, H, P, luckystrike, oj, N).
+row(I, H, P, parliaments, D, japanese).
+
+left(ivory, green).
+
+left_of(C1, C2) :-
+    row(I, C1, P, S, D, N),
+    row(I, C2, P, S, D, N),
+    left(C1, C2).
+
+adj_to(I1, I2) :-
+    row(I1, H, P, S, D, N),
+    row(I2, H, P, S, D, N),
+    I1 + 1 =:= I2 ; I1 - 1 =:= I2.
+
+neighbor(I1, I2) :-
+    row(I1, H, P, chesterfields, D, N),
+    row(I2, H, fox, S, D, N).
+
+
+
+
+%drinks(drink(water), Person).
+%owns(pet(zebra), Person).
+% row(I, H, P, S, water, N).
+% row(I, H, zebra, S, D, N).
