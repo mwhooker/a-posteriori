@@ -34,25 +34,23 @@ class Multilock(list, ContextDecorator):
 
 
 class Simulator(object):
-    def __init__(self, locks):
-        self.locks = locks
-        self.inside = self.npoints = 0
+    def __init__(self):
+        self.ip = Array('long', [0, 0])
 
     def __call__(self, lock):
         for _ in itertools.count(1):
-            with lock():
-                x = random.random()
-                y = random.random()
-                with lock:
-                    self.npoints += 1
-                    if in_circle(x, y):
-                        self.inside += 1
+            x = random.random()
+            y = random.random()
+            with self.ip.get_lock():
+                self.ip.value[0] += 1
+                if in_circle(x, y):
+                    self.ip.value[1] += 1
 
     def print_results(self, exit):
-        with self.locks:
+        with self.ip.get_lock():
             print
-            print("iterations: ", self.npoints)
-            print(4 * self.inside / self.npoints)
+            print("iterations: ", self.ip.value[0])
+            print(4 * self.ip.value[0] / self.ip.value[1])
             if exit:
                 sys.exit(0)
     
@@ -61,10 +59,10 @@ if __name__ == '__main__':
 
     max_workers = 1
     locks = Multilock()
-    sim = Simulator(locks)
+    sim = Simulator()
 
     for i in range(max_workers):
-        Process(target=sim, args=(locks.lock(),)).start()
+        Process(target=sim).start()
 
     signal.signal(signal.SIGINT, lambda *args: sim.print_results(False))
     signal.signal(signal.SIGQUIT, lambda *args: sim.print_results(True))
