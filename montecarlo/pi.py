@@ -7,7 +7,7 @@ import signal
 import functools
 
 from contextlib import ContextDecorator
-from multiprocessing import Process, Lock
+from multiprocessing import Process, Lock, Array, set_start_method
 
 
 def in_circle(x, y):
@@ -35,34 +35,54 @@ class Multilock(list, ContextDecorator):
 
 class Simulator(object):
     def __init__(self):
-        self.ip = Array('long', [0, 0])
+        self.ip = Array('i', range(2))
+        self._run = True
 
-    def __call__(self, lock):
-        for _ in itertools.count(1):
+    def __call__(self):
+        while self._run:
             x = random.random()
             y = random.random()
             with self.ip.get_lock():
-                self.ip.value[0] += 1
+                self.ip[0] += 1
                 if in_circle(x, y):
-                    self.ip.value[1] += 1
+                    self.ip[1] += 1
 
-    def print_results(self, exit):
+    def stop(self):
+        """stop the worker"""
+        self._run = False
+
+    def print_results(self):
         with self.ip.get_lock():
             print
-            print("iterations: ", self.ip.value[0])
-            print(4 * self.ip.value[0] / self.ip.value[1])
-            if exit:
-                sys.exit(0)
-    
-if __name__ == '__main__':
+            print("iterations, hits: ", self.ip[0], self.ip[1])
+            print(4 * self.ip[1] / self.ip[0])
 
+
+
+if __name__ == '__main__':
+    sim = Simulator()
+    processes = []
+
+    def worker_start():
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGQUIT, lambda *args: sim.stop())
+        sim()
+
+    def handle_int(*args):
+        sim.print_results()
+
+    def handle_quit(*args):
+        # wait for workers to exit
+        for p in processes:
+            p.join()
+        sim.print_results()
 
     max_workers = 1
-    locks = Multilock()
-    sim = Simulator()
 
     for i in range(max_workers):
-        Process(target=sim).start()
+        p = Process(target=worker_start)
+        processes.append(p)
+        p.start()
 
-    signal.signal(signal.SIGINT, lambda *args: sim.print_results(False))
-    signal.signal(signal.SIGQUIT, lambda *args: sim.print_results(True))
+    signal.signal(signal.SIGINT, handle_int)
+    signal.signal(signal.SIGQUIT, handle_quit)
