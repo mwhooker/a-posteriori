@@ -6,7 +6,7 @@ import math
 import signal
 
 from contextlib import ContextDecorator
-from multiprocessing import Process, Lock, Array, set_start_method
+import multiprocessing as mp
 
 
 def in_circle(x, y):
@@ -27,14 +27,14 @@ class Multilock(list, ContextDecorator):
             lock.release()
 
     def lock(self, *args, **kwargs):
-        lock = Lock(*args, **kwargs)
+        lock = mp.Lock(*args, **kwargs)
         self.append(lock)
         return lock
 
 
 class Simulator(object):
     def __init__(self):
-        self.ip = Array('i', range(2))
+        self.ip = mp.Array('i', range(2))
         self._run = True
 
     def __call__(self):
@@ -76,10 +76,11 @@ if __name__ == '__main__':
             p.join()
         sim.print_results()
 
-    max_workers = 1
+    max_workers = mp.cpu_count()
+    print("max workers: ", max_workers)
 
     for i in range(max_workers):
-        p = Process(target=worker_start)
+        p = mp.Process(target=worker_start)
         processes.append(p)
         p.start()
 

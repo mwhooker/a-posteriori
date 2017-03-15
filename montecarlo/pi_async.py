@@ -46,7 +46,7 @@ class Results(object):
         print(4 * self.hits / self.runs)
 
 def main():
-    runs = 1000000
+    runs = 10000
     results = Results(runs)
     running = True
 
@@ -55,21 +55,22 @@ def main():
         running = False
         sys.exit(0)
 
-    signal.signal(signal.SIGQUIT, lambda *args: handle_quit())
+    def handle_int(*args):
+        results.print_results()
 
-    semaphore = mp.BoundedSemaphore(mp.cpu_count())
+    signal.signal(signal.SIGQUIT, lambda *args: handle_quit())
+    signal.signal(signal.SIGINT, lambda *args: handle_int())
+
+    workers = mp.cpu_count()
+    semaphore = mp.BoundedSemaphore(workers)
 
     def done(future):
         results.future_cb(future)
         semaphore.release()
 
-    with concurrent.futures.ProcessPoolExecutor() as executor:
+    with concurrent.futures.ProcessPoolExecutor(workers) as executor:
         while running:
-            try:
-                semaphore.acquire()
-            except KeyboardInterrupt:
-                results.print_results()
-                continue
+            semaphore.acquire()
             future = executor.submit(Simulator(runs))
             future.add_done_callback(done)
 
