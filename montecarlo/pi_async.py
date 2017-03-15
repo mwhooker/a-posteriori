@@ -46,13 +46,11 @@ class Results(object):
         print(4 * self.hits / self.runs)
 
 def main():
-    runs = 10000
-    results = Results(runs)
-    running = True
+    batch_size = 10000
+    results = Results(batch_size)
 
     def handle_quit():
         results.print_results()
-        running = False
         sys.exit(0)
 
     def handle_int(*args):
@@ -69,9 +67,9 @@ def main():
         semaphore.release()
 
     with concurrent.futures.ProcessPoolExecutor(workers) as executor:
-        while running:
+        while True:
             semaphore.acquire()
-            future = executor.submit(Simulator(runs))
+            future = executor.submit(Simulator(batch_size))
             future.add_done_callback(done)
 
 if __name__ == '__main__':
