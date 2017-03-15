@@ -1,10 +1,9 @@
-#/usr/bin/env python3
+#!/usr/bin/env python3
+
 import random
 import sys
-import itertools
 import math
 import signal
-import functools
 
 from contextlib import ContextDecorator
 from multiprocessing import Process, Lock, Array, set_start_method
