@@ -17,23 +17,46 @@ a square
 
 from collections import defaultdict
 from pprint import pprint as pp
+from itertools import izip_longest
 
 
 def do(lhs, pairs):
     ret = [lhs]
     for p in pairs:
         if p[0] == lhs:
-            pairs_cp = [x for x in pairs if lhs not in x]
-            ret.append([do(p[1], pairs_cp)])
+            pairs_cp = [x for x in pairs if x != p]
+            ret.append(do(p[1], pairs_cp))
 
     return ret
 
 
+def grouper(iterable, n, fillvalue=None):
+    "Collect data into fixed-length chunks or blocks"
+    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
+    args = [iter(iterable)] * n
+    return izip_longest(fillvalue=fillvalue, *args)
+
+def find_paths(head, tail):
+    if not tail:
+        return
+
+    for lhs, rhs in grouper(tail, 2):
+        print lhs
+        if lhs not in head:
+            head.append(lhs)
+            find_paths(head, rhs)
+    return
+    if len(head) == 15:
+        pp( head)
+
+
+
 if __name__ == '__main__':
-    squares = [i *i for i in xrange(1, 16)]
+    size = 15
+    squares = [i *i for i in xrange(1, size+1)]
     map = defaultdict(list)
-    for i in xrange(1, 16):
-        for j in xrange(1, 16):
+    for i in xrange(1, size+1):
+        for j in xrange(1, size+1):
             if i + j in squares:
                 map[i + j].append( (i, j))
 
@@ -43,4 +66,16 @@ if __name__ == '__main__':
 
     pairs.sort()
     print "pairs:", pairs
-    pp(do(1, pairs))
+    paths = []
+    for i in xrange(1, size+1):
+        find_paths([], do(i, pairs))
+
+
+    """
+    for i in xrange(15):
+        x = paths[i]
+        if isinstance(x, list):
+            x = x[0]
+        pp(x)
+    """
+
